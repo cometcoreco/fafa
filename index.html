@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PSD Text Updater</title>
+</head>
+<body>
+    <button id="loadPSD">Load PSD</button>
+
+    <form id="textUpdaterForm" style="display: none;">
+        <label>Text Layer 1:
+            <input type="text" id="text1" name="text1" required>
+        </label>
+        
+        <label>Text Layer 2:
+            <input type="text" id="text2" name="text2" required>
+        </label>
+        
+        <label>Text Layer 3:
+            <input type="text" id="text3" name="text3" required>
+        </label>
+        
+        <input type="submit" value="Update & Download JPG">
+    </form>
+
+    <iframe name="photopea" style="border:1px solid #ccc; width:100%; height:600px; margin-top:20px;" src=""></iframe>
+
+    <script>
+        function logError(message) {
+            console.error(`[Error]: ${message}`);
+        }
+
+        document.getElementById('loadPSD').addEventListener('click', function() {
+            const photopeaURL = `https://www.photopea.com#{"files":["https://vecvecvecvec10.netlify.app/projekt.psd"]}`;
+            document.querySelector('iframe[name="photopea"]').src = photopeaURL;
+            document.getElementById('textUpdaterForm').style.display = "block";
+            this.style.display = "none";
+        });
+
+        document.getElementById('textUpdaterForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const text1Value = document.getElementById('text1').value;
+            const text2Value = document.getElementById('text2').value;
+            const text3Value = document.getElementById('text3').value;
+
+            console.log("Attempting to update TextLayer1...");
+            window.photopea.postMessage({ 
+                name: "put",
+                id: "TextLayer1",
+                text: text1Value
+            }, "*");
+
+            console.log("Attempting to update TextLayer2...");
+            window.photopea.postMessage({ 
+                name: "put",
+                id: "TextLayer2",
+                text: text2Value
+            }, "*");
+
+            console.log("Attempting to update TextLayer3...");
+            window.photopea.postMessage({ 
+                name: "put",
+                id: "TextLayer3",
+                text: text3Value
+            }, "*");
+
+            setTimeout(() => {
+                console.log("Attempting to export as JPG...");
+                window.photopea.postMessage({
+                    name: "export",
+                    format: "jpg",
+                    quality: 90
+                }, "*");
+            }, 3000);
+        });
+
+        window.addEventListener("message", function(event) {
+            if (event.data && event.data.name === "export") {
+                const blob = new Blob([new Uint8Array(event.data.buffer)], { type: "image/jpeg" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "exported_image.jpg";
+                link.click();
+            } else if (event.data && event.data.name === "error") {
+                logError(event.data.message);
+            } else {
+                console.log("Received message from Photopea:", event.data);
+            }
+        });
+    </script>
+</body>
+</html>
